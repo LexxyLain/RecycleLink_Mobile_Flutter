@@ -12,7 +12,7 @@ class CurrentActivity extends StatefulWidget {
 }
 
 class _CurrentActivityState extends State<CurrentActivity> {
-  Map<String, dynamic>? pickup;
+  List<Map<String, dynamic>> pickups = [];
   String errorMessage = '';
   bool showCancelReason = false;
   final TextEditingController reasonController = TextEditingController();
@@ -30,69 +30,33 @@ class _CurrentActivityState extends State<CurrentActivity> {
   }
 
   Future<void> fetchCurrentSchedule(int userId) async {
-    try {
-      final response = await http.get(
-        Uri.parse('https://kayemndjr11.helioho.st/api/current.php?user_id=$userId'),
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['status'] == 'success') {
-          setState(() {
-            pickup = data['pickup'];
-            errorMessage = '';
-          });
-        } else {
-          setState(() {
-            errorMessage = data['message'];
-          });
-        }
-      } else {
-        setState(() {
-          errorMessage = 'Failed to load data';
-        });
-      }
-    } catch (e) {
-      setState(() {
-        errorMessage = 'An error occurred: $e';
-      });
-    }
-  }
-
-  Future<void> cancelPickup(String reason) async {
   try {
-    final response = await http.post(
-      Uri.parse('https://kayemndjr11.helioho.st/api/current.php'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'pickup_id': pickup?['pickup_id'].toString(),
-        'reason': reason,
-      }),
+    final response = await http.get(
+      Uri.parse('https://kayemndjr11.helioho.st/api/current.php?user_id=$userId'),
     );
 
     if (response.statusCode == 200) {
-      try {
-        final data = json.decode(response.body);
-        if (data['status'] == 'success') {
-          setState(() {
-            pickup = null;
-            reasonController.clear();
-            showCancelReason = false;
-            errorMessage = '';
-          });
-        } else {
-          setState(() {
-            errorMessage = data['message'];
-          });
-        }
-      } catch (e) {
+      final data = json.decode(response.body);
+      if (data['status'] == 'success') {
         setState(() {
-          errorMessage = 'Invalid response format: ${e.toString()}';
+          pickups = List<Map<String, dynamic>>.from(data['pickup']);
+
+          pickups.sort((a, b) {
+            DateTime dateTimeA = DateTime.parse("${a['pickup_date']} ${a['pickup_time']}");
+            DateTime dateTimeB = DateTime.parse("${b['pickup_date']} ${b['pickup_time']}");
+            return dateTimeB.compareTo(dateTimeA); 
+          });
+
+          errorMessage = '';
+        });
+      } else {
+        setState(() {
+          errorMessage = data['message'];
         });
       }
     } else {
       setState(() {
-        errorMessage = 'Failed to cancel pick-up. Server responded with status: ${response.statusCode}';
+        errorMessage = 'Failed to load data';
       });
     }
   } catch (e) {
@@ -103,13 +67,51 @@ class _CurrentActivityState extends State<CurrentActivity> {
 }
 
 
-  Future<void> completePickup() async {
+
+  Future<void> cancelPickup(String reason, int pickupId) async {
     try {
       final response = await http.post(
         Uri.parse('https://kayemndjr11.helioho.st/api/current.php'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'pickup_id': pickup?['pickup_id'].toString(),
+          'pickup_id': pickupId.toString(),
+          'reason': reason,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['status'] == 'success') {
+          setState(() {
+            pickups.removeWhere((pickup) => pickup['pickup_id'] == pickupId);
+            reasonController.clear();
+            showCancelReason = false;
+            errorMessage = '';
+          });
+        } else {
+          setState(() {
+            errorMessage = data['message'];
+          });
+        }
+      } else {
+        setState(() {
+          errorMessage = 'Failed to cancel pick-up.';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'An error occurred: $e';
+      });
+    }
+  }
+
+  Future<void> completePickup(int pickupId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('https://kayemndjr11.helioho.st/api/current.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'pickup_id': pickupId.toString(),
           'status': 'Completed',
         }),
       );
@@ -118,7 +120,7 @@ class _CurrentActivityState extends State<CurrentActivity> {
         final data = json.decode(response.body);
         if (data['status'] == 'success') {
           setState(() {
-            pickup = null;
+            pickups.removeWhere((pickup) => pickup['pickup_id'] == pickupId);
             errorMessage = 'Pick-up completed successfully.';
           });
         } else {
@@ -140,16 +142,6 @@ class _CurrentActivityState extends State<CurrentActivity> {
 
   @override
   Widget build(BuildContext context) {
-    DateTime? pickupDate;
-    String pickupDateStr = '';
-    String pickupTimeStr = '';
-
-    if (pickup != null && pickup!['pickup_date'] != null) {
-      pickupDate = DateTime.parse(pickup!['pickup_date']);
-      pickupDateStr = '${pickupDate.month}/${pickupDate.day}/${pickupDate.year}';
-      pickupTimeStr = pickup!['pickup_time'];
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Current Pickup Schedule'),
@@ -170,95 +162,99 @@ class _CurrentActivityState extends State<CurrentActivity> {
             ),
             const SizedBox(height: 20),
             errorMessage.isEmpty
-                ? pickup == null
+                ? pickups.isEmpty
                     ? const Center(
                         child: Text(
                           'No upcoming pickups.',
                           style: TextStyle(fontSize: 16, color: Colors.red),
                         ),
                       )
-                    : Center(
-                        child: SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.8,
-                          child: Card(
-                            elevation: 2,
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Date: $pickupDateStr',
-                                    style: const TextStyle(
-                                      fontSize: 14, 
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Time: $pickupTimeStr',
-                                    style: const TextStyle(fontSize: 14),
-                                  ),
-                                  Text(
-                                    'Weight: ${pickup?['weight_kg'] ?? 'Unknown'}',
-                                    style: const TextStyle(fontSize: 14),
-                                  ),
-                                  Text(
-                                    'Status: ${pickup?['status'] ?? 'Unknown'}',
-                                    style: const TextStyle(fontSize: 14),
-                                  ),
-                                  Text(
-                                    'Address: ${pickup?['address'] ?? 'Unknown'}',
-                                    style: const TextStyle(fontSize: 14),
-                                  ),
-                                  Text(
-                                    'Contact Number: ${pickup?['phone_number'] ?? 'Unknown'}',
-                                    style: const TextStyle(fontSize: 14),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red,
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        showCancelReason = true;
-                                      });
-                                    },
-                                    child: const Text('Cancel Pick-Up'),
-                                  ),
-                                  if (showCancelReason) ...[
-                                    const SizedBox(height: 12),
-                                    TextField(
-                                      controller: reasonController,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Reason for cancellation',
-                                        border: OutlineInputBorder(),
-                                      ),
-                                      maxLines: 3,
-                                    ),
-                                    const SizedBox(height: 8),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        if (reasonController.text.isNotEmpty) {
-                                          cancelPickup(reasonController.text);
-                                        } else {
-                                          setState(() {
-                                            errorMessage = 'Please provide a reason for cancellation.';
-                                          });
-                                        }
-                                      },
-                                      child: const Text('Submit'),
-                                    ),
-                                  ],
-                                ],
+                    : Expanded(
+                        child: ListView.builder(
+                          itemCount: pickups.length,
+                          itemBuilder: (context, index) {
+                            final pickup = pickups[index];
+                            return Card(
+                              elevation: 2,
+                              margin: const EdgeInsets.symmetric(vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                            ),
-                          ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Date: ${pickup['pickup_date']}',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Time: ${pickup['pickup_time']}',
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                    Text(
+                                      'Weight: ${pickup['weight_kg']} kg',
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                    Text(
+                                      'Status: ${pickup['status']}',
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                    Text(
+                                      'Address: ${pickup['address']}',
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                    Text(
+                                      'Contact Number: ${pickup['phone_number']}',
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Row(
+                                      children: [
+                                        ElevatedButton(
+                                          onPressed: () => setState(() {
+                                            showCancelReason = true;
+                                          }),
+                                          child: const Text('Cancel Pickup'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    if (showCancelReason)
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          TextField(
+                                            controller: reasonController,
+                                            decoration: const InputDecoration(
+                                              labelText: 'Cancellation Reason',
+                                            ),
+                                          ),
+                                          ElevatedButton(
+                                            onPressed: () {
+                                              cancelPickup(
+                                                  reasonController.text,
+                                                  pickup['pickup_id']);
+                                            },
+                                            child: const Text('Confirm Cancel'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       )
                 : Center(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'login_page.dart'; // Import the login page
+import 'login_page.dart';
 
 class UserRegistration extends StatefulWidget {
   const UserRegistration({super.key});
@@ -20,10 +20,24 @@ class _UserRegistrationState extends State<UserRegistration> {
   final _addressController = TextEditingController();
   final _contactController = TextEditingController();
 
+  Future<void> validatePassword(String password) async {
+    // Simulate async operation (e.g., API call)
+    await Future.delayed(Duration(milliseconds: 100));
+
+    final passwordRegex = RegExp(
+      r'^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$',
+    );
+
+    if (password.isEmpty) {
+      throw 'Password cannot be empty';
+    } else if (!passwordRegex.hasMatch(password)) {
+      throw 'Password must contain at least:\n- 1 uppercase letter\n- 1 digit\n- 1 special character\n- Minimum 8 characters';
+    }
+  }
+
   Future<void> _registerUser() async {
     const apiUrl = 'https://kayemndjr11.helioho.st/api/users.php';
 
-    // Create a map with the data to send
     final Map<String, String> userData = {
       'full_name': '${_firstNameController.text} ${_lastNameController.text}',
       'email': _emailController.text,
@@ -32,7 +46,17 @@ class _UserRegistrationState extends State<UserRegistration> {
       'phone': _contactController.text,
     };
 
-    // Make the POST request
+    // Password validation
+    try {
+      await validatePassword(_passwordController.text);
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Password Error: $error')),
+      );
+      return;
+    }
+
+    // POST request
     try {
       final response = await http.post(
         Uri.parse(apiUrl),
@@ -40,19 +64,16 @@ class _UserRegistrationState extends State<UserRegistration> {
         body: json.encode(userData),
       );
 
-      // Log the response for debugging
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
-        // Check the response from the API
         final responseBody = json.decode(response.body);
         if (responseBody['success']) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Registration successful!')),
           );
 
-          // Navigate to login page after successful registration
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const LoginPage()),
@@ -74,21 +95,30 @@ class _UserRegistrationState extends State<UserRegistration> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Register'),
+ @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: Text(
+        'Register',
+        style: TextStyle(color: Colors.white),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
+      backgroundColor: Colors.green[900],
+    ),
+    body: Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView( // To handle overflow
           child: Column(
             children: [
+              // First Name Field
               TextFormField(
                 controller: _firstNameController,
-                decoration: const InputDecoration(labelText: 'First Name'),
+                decoration: const InputDecoration(
+                  labelText: 'First Name',
+                  border: OutlineInputBorder(),
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your first name';
@@ -96,9 +126,15 @@ class _UserRegistrationState extends State<UserRegistration> {
                   return null;
                 },
               ),
+              const SizedBox(height: 16), // Spacing between fields
+
+              // Last Name Field
               TextFormField(
                 controller: _lastNameController,
-                decoration: const InputDecoration(labelText: 'Last Name'),
+                decoration: const InputDecoration(
+                  labelText: 'Last Name',
+                  border: OutlineInputBorder(),
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your last name';
@@ -106,9 +142,15 @@ class _UserRegistrationState extends State<UserRegistration> {
                   return null;
                 },
               ),
+              const SizedBox(height: 16),
+
+              // Email Field
               TextFormField(
                 controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your email';
@@ -116,20 +158,47 @@ class _UserRegistrationState extends State<UserRegistration> {
                   return null;
                 },
               ),
-              TextFormField(
+              const SizedBox(height: 16),
+
+              // Password Field
+                TextFormField(
                 controller: _passwordController,
-                decoration: const InputDecoration(labelText: 'Password'),
+                decoration: const InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(),
+                ),
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your password';
                   }
+                  if (value.length < 8) {
+                    return 'Password must be at least 8 characters long';
+                  }
+                  if (!RegExp(r'[A-Z]').hasMatch(value)) {
+                    return 'Password must have at least 1 capital letter';
+                  }
+                  if (!RegExp(r'[a-z]').hasMatch(value)) {
+                    return 'Password must have at least 1 lowercase letter';
+                  }
+                  if (!RegExp(r'[0-9]').hasMatch(value)) {
+                    return 'Password must have at least 1 numeric character';
+                  }
+                  if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value)) {
+                    return 'Password must have at least 1 special character';
+                  }
                   return null;
                 },
               ),
+              const SizedBox(height: 16),
+
+              // Re-enter Password Field
               TextFormField(
                 controller: _reenterPasswordController,
-                decoration: const InputDecoration(labelText: 'Re-enter Password'),
+                decoration: const InputDecoration(
+                  labelText: 'Re-enter Password',
+                  border: OutlineInputBorder(),
+                ),
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -140,9 +209,15 @@ class _UserRegistrationState extends State<UserRegistration> {
                   return null;
                 },
               ),
+              const SizedBox(height: 16),
+
+              // Address Field
               TextFormField(
                 controller: _addressController,
-                decoration: const InputDecoration(labelText: 'Address'),
+                decoration: const InputDecoration(
+                  labelText: 'Address',
+                  border: OutlineInputBorder(),
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your address';
@@ -150,9 +225,15 @@ class _UserRegistrationState extends State<UserRegistration> {
                   return null;
                 },
               ),
+              const SizedBox(height: 16),
+
+              // Contact Field
               TextFormField(
                 controller: _contactController,
-                decoration: const InputDecoration(labelText: 'Contact'),
+                decoration: const InputDecoration(
+                  labelText: 'Contact',
+                  border: OutlineInputBorder(),
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your contact number';
@@ -161,6 +242,8 @@ class _UserRegistrationState extends State<UserRegistration> {
                 },
               ),
               const SizedBox(height: 20),
+
+              // Register Button
               ElevatedButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
@@ -173,6 +256,7 @@ class _UserRegistrationState extends State<UserRegistration> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

@@ -32,30 +32,32 @@ class _CollectorCurrentActivityState extends State<CollectorCurrentActivity> {
   }
 
   Future<void> fetchAllApprovedPickups(int collectorId) async {
-    final response = await http.get(
-      Uri.parse(
-          'https://kayemndjr11.helioho.st/api/collectorcurrent.php?collector_id=$collectorId'),
-    );
+  final response = await http.get(
+    Uri.parse(
+        'https://kayemndjr11.helioho.st/api/collectorcurrent.php?collector_id=$collectorId'),
+  );
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
+  if (response.statusCode == 200) {
+    final data = json.decode(response.body);
 
-      if (data['status'] == 'success') {
-        setState(() {
-          approvedPickups = data['pickups'];
-          errorMessage = '';
-        });
-      } else {
-        setState(() {
-          errorMessage = data['message'];
-        });
-      }
+    if (data['status'] == 'success') {
+      setState(() {
+        // Cast the pickups as a list of maps
+        approvedPickups = List<Map<String, dynamic>>.from(data['pickups']);
+        errorMessage = '';
+      });
     } else {
       setState(() {
-        errorMessage = 'Failed to load approved pickups.';
+        errorMessage = data['message'];
       });
     }
+  } else {
+    setState(() {
+      errorMessage = 'Failed to load approved pickups.';
+    });
   }
+}
+
 
   Future<void> cancelPickup(int pickupId, String reason) async {
     final response = await http.post(

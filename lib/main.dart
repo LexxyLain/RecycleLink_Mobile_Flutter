@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart'; 
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'user_dashboard.dart';
 import 'register_page.dart';
 import 'login_page.dart';
@@ -8,9 +8,10 @@ import 'collector_registration.dart';
 import 'schedule_user.dart';
 import 'transaction_history.dart';
 import 'collector_dashboard.dart';
+import 'pricing.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -28,7 +29,7 @@ class MyApp extends StatelessWidget {
           theme: ThemeData(
             primarySwatch: Colors.green,
           ),
-          home: const LoginPage(),
+          home: const LoginPage(), // Start with LoginPage
           routes: {
             '/login': (context) => const LoginPage(),
             '/register': (context) => RegisterPage(),
@@ -37,10 +38,15 @@ class MyApp extends StatelessWidget {
             '/userRegistration': (context) => const UserRegistration(),
             '/collectorRegistration': (context) => CollectorRegistration(),
             '/transactionHistory': (context) => const TransactionHistory(),
+            '/pricing': (context) => const PricingPage(),
           },
           onGenerateRoute: (settings) {
-            if (settings.name == '/schedule') {
-              final userId = settings.arguments as String?; 
+            // Handle dynamic routes
+            if (settings.name == '/chat') {
+              final args = settings.arguments as Map<String, int>?; // Cast arguments to expected type
+              
+            } else if (settings.name == '/schedule') {
+              final userId = settings.arguments as String?;
               return MaterialPageRoute(
                 builder: (context) => Schedule(userId: userId ?? '0'),
               );

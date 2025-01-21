@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart'; 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'pricing.dart';
 import 'schedule_user.dart';
 import 'transaction_history.dart';
 import 'current_activity.dart'; 
-import 'user_notification.dart';
+import 'mapping.dart';
+import 'pricing.dart';
 
 class UserDashboard extends StatefulWidget {
   const UserDashboard({Key? key}) : super(key: key);
@@ -14,7 +16,7 @@ class UserDashboard extends StatefulWidget {
 
 class _UserDashboardState extends State<UserDashboard> {
   int userId = 0;
-  String username = '';  // To store the full_name
+  String username = ''; 
 
   @override
   void initState() {
@@ -26,7 +28,7 @@ class _UserDashboardState extends State<UserDashboard> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       userId = prefs.getInt('user_id') ?? 0;
-      username = prefs.getString('full_name') ?? 'User';  // Corrected key for full_name
+      username = prefs.getString('full_name') ?? 'User';
     });
     if (userId == 0) {
       // If user is not logged in, redirect to login page
@@ -66,13 +68,14 @@ class _UserDashboardState extends State<UserDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.green[900],
+        backgroundColor: Colors.green[800],
         title: Text(
           'Hello, $username!',  // Displays the full name here
           style: const TextStyle(color: Colors.white),
         ),
         automaticallyImplyLeading: false, // Remove the back button
         actions: [
+         
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.white),  // Logout icon color set to white
             onPressed: () => _confirmLogout(context),
@@ -89,7 +92,7 @@ class _UserDashboardState extends State<UserDashboard> {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.green[900],
+                color: Colors.green[800],
               ),
             ),
             const SizedBox(height: 10),
@@ -97,7 +100,7 @@ class _UserDashboardState extends State<UserDashboard> {
               'User ID: $userId', 
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.green[900],
+                color: Colors.green[800],
               ),
             ),
             const SizedBox(height: 20),
@@ -107,7 +110,7 @@ class _UserDashboardState extends State<UserDashboard> {
                   DashboardItem(
                     icon: Icons.today,
                     label: 'Schedule Pickup',
-                    color: Colors.green[900]!,
+                    color: Colors.green[800]!,
                     onTap: () {
                       Navigator.push(
                         context,
@@ -119,7 +122,7 @@ class _UserDashboardState extends State<UserDashboard> {
                   DashboardItem(
                     icon: Icons.check_circle,
                     label: 'Current Activity',
-                    color: Colors.green[900]!,
+                    color: Colors.green[800]!,
                     onTap: () {
                       Navigator.push(
                         context,
@@ -130,9 +133,42 @@ class _UserDashboardState extends State<UserDashboard> {
                     },
                   ),
                   DashboardItem(
+                      icon: Icons.map,
+                      label: 'View Map',
+                      color: Colors.green[800]!,
+                      onTap: () {
+                        var collectorId;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => MappingScreen(
+                              latitude: 51.505,  // Replace with the user's actual latitude
+                              longitude: -0.09,  // Replace with the user's actual longitude
+                              title: 'User Map',
+                              userId: userId,
+                              collectorId: collectorId ?? 0,  // Pass collectorId (use default if null)
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                   DashboardItem(
+                    icon: Icons.attach_money,
+                    label: 'View Pricing',
+                    color: Colors.green[800]!,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PricingPage(),
+                        ),
+                      );
+                    },
+                  ),
+                  DashboardItem(
                     icon: Icons.history_rounded,
                     label: 'Transaction History',
-                    color: Colors.green[900]!,
+                    color: Colors.green[800]!,
                     onTap: () {
                       Navigator.push(
                         context,
@@ -140,15 +176,15 @@ class _UserDashboardState extends State<UserDashboard> {
                       );
                     },
                   ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+            }
 
 
 class DashboardItem extends StatelessWidget {
@@ -207,4 +243,6 @@ class DashboardItem extends StatelessWidget {
       ),
     );
   }
+  
+  toWidget() {}
 }

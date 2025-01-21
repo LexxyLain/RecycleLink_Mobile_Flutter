@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:recyclelinkkkkkkkkkkk/collector_pricing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'pickup_requests.dart';
 import 'collector_transaction_history.dart';
 import 'collectorcurrent_activity.dart'; 
+import 'mapping_collector.dart';
+import 'collector_pricing.dart';
 
 class CollectorDashboard extends StatefulWidget {
   const CollectorDashboard({Key? key}) : super(key: key);
@@ -12,8 +15,10 @@ class CollectorDashboard extends StatefulWidget {
 }
 
 class _CollectorDashboardState extends State<CollectorDashboard> {
-  int collectorId = 0;
+  int? collectorId; // Allow null initially
   String collectorName = '';
+  
+  get userId => null;
 
   @override
   void initState() {
@@ -62,25 +67,25 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green[800],
-        title: Text('Collector Dashboard'),
+        title: const Text('Collector Dashboard'),
         actions: [
           IconButton(
-            icon: Icon(Icons.logout),
+            icon: const Icon(Icons.logout),
             onPressed: () => _confirmLogout(context),
           ),
         ],
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
+            const Text(
               'Welcome to your dashboard!',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: const Color.fromARGB(255, 46, 127, 50),
+                color: Color.fromARGB(255, 46, 127, 50),
               ),
             ),
             DashboardItem(
@@ -91,25 +96,12 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => PickupRequests(collectorId: collectorId),
+                    builder: (context) => PickupRequests(collectorId: collectorId ?? 0),
                   ),
                 );
               },
             ),
-            DashboardItem(
-              icon: Icons.history,
-              label: 'Transaction History',
-              color: const Color.fromARGB(255, 46, 126, 49),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        CollectorTransactionHistory(collectorId: collectorId),
-                  ),
-                );
-              },
-            ),
+           
             DashboardItem(
               icon: Icons.local_activity,
               label: 'Current Activity',
@@ -118,8 +110,47 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>
-                        CollectorCurrentActivity(collectorId: collectorId),
+                    builder: (context) => CollectorCurrentActivity(collectorId: collectorId ?? 0),
+                  ),
+                );
+              },
+            ),
+            
+            DashboardItem(
+              icon: Icons.map,
+              label: 'View Map',
+              color: const Color.fromARGB(255, 46, 126, 49),
+              onTap: () {
+                Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MappingCollector(userId: userId),
+                ),
+              );
+              },
+            ),
+            DashboardItem(
+                    icon: Icons.attach_money,
+                    label: 'View Pricing',
+                    color: Colors.green[800]!,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CollectorPricingPage(),
+                        ),
+                      );
+                    },
+                  ),
+             DashboardItem(
+              icon: Icons.history,
+              label: 'Transaction History',
+              color: const Color.fromARGB(255, 46, 126, 49),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CollectorTransactionHistory(collectorId: collectorId ?? 0),
                   ),
                 );
               },

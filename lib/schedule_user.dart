@@ -59,7 +59,8 @@ class _CalendarExampleState extends State<CalendarExample> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Confirm Appointment'),
-          content: Text('Do you want to schedule a pickup on ${DateFormat.yMMMd().format(selectedDate)}?'),
+          content: Text(
+              'Do you want to schedule a pickup on ${DateFormat.yMMMd().format(selectedDate)}?'),
           actions: <Widget>[
             TextButton(
               onPressed: () {
@@ -92,8 +93,9 @@ class _CalendarExampleState extends State<CalendarExample> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Schedule Pickup',
-        style: TextStyle(color: Colors.white),
+        title: Text(
+          'Schedule Pickup',
+          style: TextStyle(color: Colors.white),
         ),
         backgroundColor: Colors.green[900],
       ),
@@ -121,6 +123,10 @@ class _CalendarExampleState extends State<CalendarExample> {
             },
             onPageChanged: (focusedDay) {
               _focusedDay = focusedDay;
+            },
+            enabledDayPredicate: (day) {
+              // Disable all days before today
+              return !day.isBefore(DateTime.now());
             },
           ),
           const SizedBox(height: 8.0),
@@ -155,7 +161,8 @@ class WasteFormScreen extends StatefulWidget {
   final DateTime selectedDate;
   final String userId;
 
-  const WasteFormScreen({super.key, required this.selectedDate, required this.userId});
+  const WasteFormScreen(
+      {super.key, required this.selectedDate, required this.userId});
 
   @override
   _WasteFormScreenState createState() => _WasteFormScreenState();
@@ -167,7 +174,12 @@ class _WasteFormScreenState extends State<WasteFormScreen> {
   String? _wasteSize;
   String? _address;
   String? _contactNum;
-  List<String> _sizes = ['Small (1-5kgs)', 'Medium (6-20kgs)', 'Large (21-45kgs)', 'XL (46kgs++)'];
+  List<String> _sizes = [
+    'Small (1-5kgs)',
+    'Medium (6-20kgs)',
+    'Large (21-45kgs)',
+    'XL (46kgs++)'
+  ];
   List<String> _wasteTypes = [
     'Type 1 – Home Appliances (Refrigerator, Washing Machine, Dryer etc.)',
     'Type 2 – Small Appliances (Vacuum Cleaners, Iron, Blender, Fryer etc.)',
@@ -281,108 +293,136 @@ class _WasteFormScreenState extends State<WasteFormScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Pick-up Schedule',
+ @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: Text(
+        'Pick-up Schedule',
         style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: Colors.green[900],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                DropdownButtonFormField<String>(
-                  decoration: InputDecoration(labelText: 'Select Waste Type'),
-                  value: _wasteType,
-                  items: _wasteTypes.map((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  onChanged: (newValue) {
-                    setState(() {
-                      _wasteType = newValue;
-                    });
-                  },
-                  validator: (value) => value == null || value.isEmpty ? 'Please select a waste type' : null,
+      backgroundColor: Colors.green[900],
+    ),
+    body: Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Waste Type Dropdown
+              DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                  labelText: 'Select Waste Type',
+                  border: OutlineInputBorder(), // Boxed border
                 ),
-                DropdownButtonFormField<String>(
-                  decoration: InputDecoration(labelText: 'Select Waste Size'),
-                  value: selectedSize,
-                  items: _sizes.map((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  onChanged: (newValue) {
-                    setState(() {
-                      selectedSize = newValue;
-                    });
-                  },
-                  validator: (value) => value == null || value.isEmpty ? 'Please select a size' : null,
+                items: _wasteTypes.map((String type) {
+                  return DropdownMenuItem<String>(
+                    value: type,
+                    child: Text(type),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _wasteType = value;
+                  });
+                },
+                validator: (value) =>
+                    value == null ? 'Please select a waste type' : null,
+              ),
+              const SizedBox(height: 16), // Improved spacing
+
+              // Size Dropdown
+              DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                  labelText: 'Select Size',
+                  border: OutlineInputBorder(),
                 ),
-                TextFormField(
-                  decoration: InputDecoration(labelText: 'Address'),
-                  onChanged: (value) {
-                    setState(() {
-                      _address = value;
-                    });
-                  },
-                  validator: (value) => value == null || value.isEmpty ? 'Address is required' : null,
+                items: _sizes.map((String size) {
+                  return DropdownMenuItem<String>(
+                    value: size,
+                    child: Text(size),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    selectedSize = value;
+                  });
+                },
+                validator: (value) =>
+                    value == null ? 'Please select a size' : null,
+              ),
+              const SizedBox(height: 16),
+
+              // Address Field
+              TextFormField(
+                decoration: InputDecoration(
+                  labelText: 'Address',
+                  border: OutlineInputBorder(),
                 ),
-                TextFormField(
-                  decoration: InputDecoration(labelText: 'Contact Number'),
-                  onChanged: (value) {
-                    setState(() {
-                      _contactNum = value;
-                    });
-                  },
-                  validator: (value) => value == null || value.isEmpty ? 'Contact number is required' : null,
+                onChanged: (value) {
+                  _address = value;
+                },
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please enter an address'
+                    : null,
+              ),
+              const SizedBox(height: 16),
+
+              // Contact Number Field
+              TextFormField(
+                decoration: InputDecoration(
+                  labelText: 'Contact Number',
+                  border: OutlineInputBorder(),
                 ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _pickImage,
-                  child: Text('Upload Image'),
+                keyboardType: TextInputType.phone,
+                onChanged: (value) {
+                  _contactNum = value;
+                },
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please enter a contact number'
+                    : null,
+              ),
+              const SizedBox(height: 16),
+
+              // Upload Image Button
+              TextButton.icon(
+                onPressed: _pickImage,
+                icon: Icon(Icons.image),
+                label: Text('Upload Image'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Color.fromRGBO(33, 125, 37, 1),
                 ),
-                if (_imageData != null)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
-                    child: Image.memory(
-                      _imageData!,
-                      height: 200,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ElevatedButton(
-                  onPressed: () => _selectTime(context),
-                  child: Text('Select Time'),
+              ),
+              _imageData != null
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      child: Image.memory(_imageData!),
+                    )
+                  : const SizedBox.shrink(),
+
+              // Pickup Time Button
+              TextButton(
+                onPressed: () => _selectTime(context),
+                child: Text('Select Pickup Time'),
+              ),
+              const SizedBox(height: 16),
+
+              // Schedule Pickup Button
+              ElevatedButton(
+                onPressed: submitPickup,
+                child: Text('Schedule Pickup'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green[900],
                 ),
-                if (selectedTime != null)
-                  Text(
-                    'Selected Time: ${selectedTime!.format(context)}',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                const SizedBox(height: 20),
-                Center(
-                  child: ElevatedButton(
-                    onPressed: submitPickup,
-                    child: Text('Submit'),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
